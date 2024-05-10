@@ -4,12 +4,12 @@ CREATE TABLE commands (
     raw         text NOT null,
     status      text,
     error_msg   text,
-    created_at  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at  timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at  timestamp NOT null DEFAULT current_timestamp,
+    updated_at  timestamp NOT null DEFAULT current_timestamp
 );
 
 CREATE TABLE command_logs (
-    command_id integer,
+    command_id integer UNIQUE,
     logs       text,
-    FOREIGN KEY (command_id) REFERENCES commands(id) ON DELETE SET NULL
+    FOREIGN KEY (command_id) REFERENCES commands(id) ON DELETE SET null
 )

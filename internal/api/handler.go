@@ -10,7 +10,7 @@ import (
 
 type Service interface {
 	CreateCommand(*model.Command, bool) error
-	ExecCommand(context.Context, model.Command) error
+	ExecCommand(context.Context, model.Command, bool) error
 }
 
 type CommandHandler struct {

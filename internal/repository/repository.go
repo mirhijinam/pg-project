@@ -22,7 +22,7 @@ func New(db *sql.DB) *CommandRepo {
 func (cr *CommandRepo) Create(ctx context.Context, cmd *model.Command) (err error) {
 	stmt := `
 		INSERT INTO commands (name, raw)
-		VALUES ($1, $2)
+			VALUES ($1, $2)
 		RETURNING id, created_at`
 	args := []interface{}{cmd.Name, cmd.Raw}
 
@@ -34,9 +34,9 @@ func (cr *CommandRepo) Create(ctx context.Context, cmd *model.Command) (err erro
 
 func (cr *CommandRepo) SetSuccess(ctx context.Context, id int) (err error) {
 	stmt := `
-	UPDATE commands 
-	SET status = 'success', updated_at = now() 
-	WHERE id = $1`
+		UPDATE commands 
+			SET status = 'success', updated_at = now() 
+			WHERE id = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
@@ -61,9 +61,9 @@ func (cr *CommandRepo) SetSuccess(ctx context.Context, id int) (err error) {
 
 func (cr *CommandRepo) SetError(ctx context.Context, id int, errMsg string) (err error) {
 	stmt := `
-	UPDATE commands
-	SET status = 'error', error_msg = $1, updated_at = now()
-	WHERE id = $2`
+		UPDATE commands
+			SET status = 'error', error_msg = $1, updated_at = now()
+			WHERE id = $2`
 
 	_, err = cr.db.ExecContext(ctx, stmt, errMsg, id)
 
@@ -81,8 +81,10 @@ func (cr *CommandRepo) Get(ctx context.Context, id string) (cmd model.Command, e
 
 func (cr *CommandRepo) Writer(ctx context.Context, id int) WriterFunc {
 	stmt := `
-		INSERT INTO command_logs(command_id, logs)
-		VALUES ($1, $2)`
+		INSERT INTO command_logs (command_id, logs)
+			VALUES ($1, $2)
+		ON CONFLICT (command_id) DO UPDATE 
+			SET logs = command_logs.logs || $2`
 
 	return func(p []byte) (n int, err error) {
 		_, err = cr.db.ExecContext(ctx, stmt, id, p)
