@@ -39,7 +39,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("POST /create_cmd", ch.CreateCmd())
-	mux.HandleFunc("DELETE /delete_cmd", ch.DeleteCmd())
+	mux.HandleFunc("POST /stop_cmd", ch.StopCmd())
 	mux.HandleFunc("GET /cmd_list", ch.GetCmdList())
 	mux.HandleFunc("GET /cmd_list/{id}", ch.GetCmd())
 

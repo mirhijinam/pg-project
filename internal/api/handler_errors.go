@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 )
@@ -41,20 +40,4 @@ func (h *CommandHandler) notFoundResponse(w http.ResponseWriter, r *http.Request
 	env := envelope{ans: msg}
 
 	h.responseCreator(w, r, http.StatusNotFound, env)
-}
-
-func (h *CommandHandler) methodNotAllowedResponse(w http.ResponseWriter, r *http.Request) {
-	ans := "answer"
-	msg := fmt.Sprintf("error! the %s method is not supported for this resource", r.Method)
-	env := envelope{ans: msg}
-
-	h.responseCreator(w, r, http.StatusMethodNotAllowed, env)
-}
-
-func (h *CommandHandler) editConflictResponse(w http.ResponseWriter, r *http.Request) {
-	ans := "answer"
-	msg := "error! unable to update the record due to an edit conflict, please try again"
-	env := envelope{ans: msg}
-
-	h.responseCreator(w, r, http.StatusConflict, env)
 }

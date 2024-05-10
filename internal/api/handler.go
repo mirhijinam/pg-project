@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"log/slog"
 	"net/http"
 
 	"github.com/mirhijinam/pg-project/internal/model"
@@ -10,12 +9,13 @@ import (
 
 type Service interface {
 	CreateCommand(*model.Command, bool) error
-	ExecCommand(context.Context, model.Command, bool) error
+	DeleteCommand(int) error
+	GetCommand(context.Context, int) (model.Command, error)
+	GetCommandList(context.Context) ([]model.Command, error)
 }
 
 type CommandHandler struct {
 	CommandService Service
-	Logger         *slog.Logger
 }
 
 func New(s Service) *CommandHandler {
@@ -26,8 +26,8 @@ func New(s Service) *CommandHandler {
 }
 
 type Handler interface {
+	CreateCmd() http.HandlerFunc
+	StopCmd() http.HandlerFunc
 	GetCmd() http.HandlerFunc
 	GetCmdList() http.HandlerFunc
-	ExecCmd() http.HandlerFunc
-	StopCmd() http.HandlerFunc
 }
