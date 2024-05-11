@@ -10,7 +10,7 @@ func (h *CommandHandler) responseLog(_ *http.Request, err error) {
 }
 
 func (h *CommandHandler) responseCreator(w http.ResponseWriter, r *http.Request, status int, env map[string]interface{}) {
-	err := writeJSONBody(w, status, env, nil)
+	err := writeJSON(w, status, env, nil)
 	if err != nil {
 		h.responseLog(r, err)
 		w.WriteHeader(http.StatusInternalServerError)

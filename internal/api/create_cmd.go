@@ -46,7 +46,7 @@ func (h *CommandHandler) CreateCmd() http.HandlerFunc {
 			headers := make(http.Header)
 			headers.Set("Location", fmt.Sprintf("/cmd_list/%d", cmd.Id))
 
-			err = writeJSONBody(w, http.StatusCreated, envelope{"cmd": cmd}, headers)
+			err = writeJSON(w, http.StatusCreated, envelope{"cmd": cmd}, headers)
 			if err != nil {
 				h.serverErrorResponse(w, r, err)
 				return

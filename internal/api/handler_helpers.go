@@ -75,7 +75,7 @@ func readJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error
 	return nil
 }
 
-func writeJSONBody(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
+func writeJSON(w http.ResponseWriter, status int, data envelope, headers http.Header) error {
 	js, err := json.MarshalIndent(data, "", "\t")
 	if err != nil {
 		return err

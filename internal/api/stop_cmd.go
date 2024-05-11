@@ -24,7 +24,7 @@ func (h *CommandHandler) StopCmd() http.HandlerFunc {
 
 		headers := make(http.Header)
 
-		err = writeJSONBody(w, http.StatusOK, envelope{"CmdId": inp.CmdId}, headers)
+		err = writeJSON(w, http.StatusOK, envelope{"CmdId": inp.CmdId}, headers)
 		if err != nil {
 			h.serverErrorResponse(w, r, err)
 			return

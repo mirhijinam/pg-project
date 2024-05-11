@@ -2,8 +2,13 @@ package model
 
 import (
 	"database/sql"
+	"errors"
 	"os/exec"
 	"time"
+)
+
+var (
+	ErrRecordNotFound = errors.New("record not found")
 )
 
 type Command struct {
