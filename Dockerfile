@@ -10,6 +10,6 @@ COPY . .
 
 RUN go build -o ./bin/app ./cmd/app/main.go
 
-EXPOSE 7070
+EXPOSE ${HTTP_PORT}
 
 CMD ["./bin/app"]

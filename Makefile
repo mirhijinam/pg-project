@@ -3,7 +3,7 @@ up:
 .PHONY: up
 
 down: 
-	docker-compose down --volumes
+	docker-compose down --volumes --remove-orphans
 .PHONY: down
 
 test: 
