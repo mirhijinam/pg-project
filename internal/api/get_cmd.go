@@ -11,14 +11,10 @@ import (
 	"github.com/mirhijinam/pg-project/internal/model"
 )
 
-var (
-	urlPrefix = "/cmd_list/"
-)
-
 func (h *CommandHandler) GetCmd() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.Background()
-		inpIdStr, ok := strings.CutPrefix(r.URL.Path, urlPrefix)
+		inpIdStr, ok := strings.CutPrefix(r.URL.Path, getListUrlPrefix)
 		if !ok {
 			h.serverErrorResponse(w, r, model.ErrRecordNotFound)
 		}

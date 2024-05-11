@@ -5,51 +5,55 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/mirhijinam/pg-project/internal/api"
 	"github.com/mirhijinam/pg-project/internal/config"
-	"github.com/mirhijinam/pg-project/internal/pkg/db"
-	"github.com/mirhijinam/pg-project/internal/repository"
-	"github.com/mirhijinam/pg-project/internal/service"
 )
 
 func main() {
+	ctx := context.Background()
+
 	dbCfg, err := config.GetDBConfig()
 	if err != nil {
 		slog.Error("failed to parse db config", "error", err.Error())
 		os.Exit(1)
 	}
-	ctx := context.Background()
-	dbConn := db.MustOpenDB(ctx, dbCfg)
 
-	if err != nil {
-		slog.Error("failed to init db", "error", err.Error())
-		os.Exit(1)
-	}
-
-	maxWorkers := config.GetLoggerConfig().MaxCount
-	pool := service.NewPool(maxWorkers)
+	mux := api.New(ctx, dbCfg)
 
 	srvCfg := config.GetServerConfig()
 
-	cr := repository.New(dbConn)
-	cs := service.New(cr, pool)
-	ch := api.New(cs)
+	err = run(mux, srvCfg)
+	if err != nil {
+		slog.Error("failed to run the server", "error", err.Error())
+		os.Exit(2)
+	}
+}
 
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("POST /create_cmd", ch.CreateCmd())
-	mux.HandleFunc("POST /stop_cmd", ch.StopCmd())
-	mux.HandleFunc("GET /cmd_list/", ch.GetCmdList())
-	mux.HandleFunc("GET /cmd_list/{id}", ch.GetCmd())
-
+func run(mux *http.ServeMux, srvCfg config.ServerConfig) error {
 	srv := http.Server{
 		Addr:    srvCfg.HTTPPort,
 		Handler: mux,
 	}
 
-	if err := srv.ListenAndServe(); err != nil {
-		slog.Error("failed to start server", "error", err.Error())
-		os.Exit(2)
+	serveChan := make(chan error, 1)
+	go func() {
+		serveChan <- srv.ListenAndServe()
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case <-stop:
+		slog.Info("Shutting down the server")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		return srv.Shutdown(ctx)
+	case err := <-serveChan:
+		return err
 	}
 }

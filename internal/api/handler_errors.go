@@ -41,3 +41,11 @@ func (h *CommandHandler) notFoundResponse(w http.ResponseWriter, r *http.Request
 
 	h.responseCreator(w, r, http.StatusNotFound, env)
 }
+
+func (h *CommandHandler) forbiddenAccessResponse(w http.ResponseWriter, r *http.Request) {
+	ans := "answer"
+	msg := "error! user has no access"
+	env := envelope{ans: msg}
+
+	h.responseCreator(w, r, http.StatusForbidden, env)
+}

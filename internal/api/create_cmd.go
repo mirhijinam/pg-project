@@ -17,6 +17,7 @@ type createCmdRequest struct {
 func (h *CommandHandler) CreateCmd() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		inp := createCmdRequest{}
+
 		err := readJSONBody(w, r, &inp)
 		if err != nil {
 			h.badRequestResponse(w, r, err)
@@ -29,14 +30,17 @@ func (h *CommandHandler) CreateCmd() http.HandlerFunc {
 		}
 
 		name, isSudo := getSudoNameCommand(inp.CmdRaw)
+		admin := isAdmin(r.Header.Get("token"))
+		cmd := model.Command{
+			Name:      name,
+			Raw:       inp.CmdRaw,
+			CreatedAt: time.Now(),
+		}
 
-		if !isSudo {
-			cmd := model.Command{
-				Name:      name,
-				Raw:       inp.CmdRaw,
-				CreatedAt: time.Now(),
-			}
-
+		if isSudo && !admin {
+			h.forbiddenAccessResponse(w, r)
+			return
+		} else {
 			err = h.CommandService.CreateCommand(&cmd, inp.IsLongCmd)
 			if err != nil {
 				h.serverErrorResponse(w, r, err)

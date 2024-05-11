@@ -6,11 +6,24 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 )
 
 type envelope map[string]interface{}
+
+func isAdmin(t string) bool {
+	adminToken := os.Getenv("ADMIN_TOKEN")
+
+	switch t {
+	case adminToken:
+		return true
+	default:
+		return false
+	}
+
+}
 
 func getSudoNameCommand(cmdRaw string) (name string, isSudo bool) {
 	trimmed := strings.TrimSpace(cmdRaw)
@@ -31,13 +44,13 @@ func getSudoNameCommand(cmdRaw string) (name string, isSudo bool) {
 }
 
 func readJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error {
-	maxBytes := 1_048_576
-	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytes))
+	maxBytesBody := 1_048_576
+	r.Body = http.MaxBytesReader(w, r.Body, int64(maxBytesBody))
 	dec := json.NewDecoder(r.Body)
 
 	dec.DisallowUnknownFields()
-	err := dec.Decode(dst)
 
+	err := dec.Decode(dst)
 	if err != nil {
 		var syntaxError *json.SyntaxError
 		var unmarshalTypeError *json.UnmarshalTypeError
@@ -57,7 +70,7 @@ func readJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) error
 			return fmt.Errorf("body contains incorrect JSON type (at character %d)", unmarshalTypeError.Offset)
 
 		case err.Error() == "http: request body too large":
-			return fmt.Errorf("body must not be larger than %d bytes", maxBytes)
+			return fmt.Errorf("body must not be larger than %d bytes", maxBytesBody)
 
 		case errors.As(err, &invalidUnmarshalError):
 			panic(err)
