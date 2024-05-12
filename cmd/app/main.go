@@ -28,13 +28,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	handler := api.New(ctx, dbCfg)
-
 	srvCfg, err := config.GetServerConfig()
 	if err != nil {
 		slog.Error("failed to parse server config", "error", err.Error())
 		os.Exit(1)
 	}
+
+	handler := api.New(ctx, dbCfg)
 
 	err = run(*handler, srvCfg)
 	if err != nil {
@@ -62,7 +62,6 @@ func run(handler http.Handler, srvCfg config.ServerConfig) error {
 
 	select {
 	case <-stop:
-		slog.Info("Shutting down the server")
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		return srv.Shutdown(ctx)

@@ -46,17 +46,18 @@ func (h *CommandHandler) CreateCmd() http.HandlerFunc {
 
 		name, isSudo := getSudoNameCommand(inp.CmdRaw)
 		admin := isAdmin(r.Header.Get("token"))
-		cmd := model.Command{
-			Name:      name,
-			Raw:       inp.CmdRaw,
-			CreatedAt: time.Now(),
-		}
-
 		if isSudo && !admin {
-
+			err := errors.New("no token access")
+			slog.Error("failed to get access to the provided command", "error", err.Error())
 			h.forbiddenAccessResponse(w, r)
 			return
 		} else {
+			cmd := model.Command{
+				Name:      name,
+				Raw:       inp.CmdRaw,
+				CreatedAt: time.Now(),
+			}
+
 			err = h.CommandService.CreateCommand(&cmd, inp.IsLongCmd)
 			if err != nil {
 				slog.Error("failed to create the provided command", "error", err.Error())

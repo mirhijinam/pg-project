@@ -5,15 +5,23 @@ services:
     build: "."
     ports:
       - "${HTTP_PORT}:${HTTP_PORT}"
-    restart: on-failure
+    restart: on-failure:5
+    tty: true
+    stdin_open: true
     env_file:
       - .env
     depends_on:
-      - "postgres"
+      postgres:
+        condition: service_healthy
   postgres:
     container_name: postgres
     image:
       postgres:15.2-alpine
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PGUSER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     environment:
       POSTGRES_DB: ${PGDATABASE}
       POSTGRES_USER: ${PGUSER}
