@@ -14,6 +14,17 @@ type createCmdRequest struct {
 	IsLongCmd bool   `json:"is_long_cmd"`
 }
 
+// CreateCmd handles the creation and execution of a command
+// @Description Create and execute a command
+// @Tags Cmd
+// @Produce application/json
+// @Param request body createCmdRequest true "Request Create Command"
+// @Header 201 {string} Locationswag init "/cmd_list/{id}" "Location of the created command"
+// @Success 201 {object} envelope "Command created successfully"
+// @Failure 400 {object} envelope "Bad request if the input data is incorrect"
+// @Failure 403 {object} envelope "Forbidden if attempting a sudo command without admin rights"
+// @Failure 500 {object} envelope "Internal server error if command creation fails"
+// @Router /create_cmd [post]
 func (h *CommandHandler) CreateCmd() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		inp := createCmdRequest{}

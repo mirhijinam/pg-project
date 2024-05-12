@@ -11,6 +11,16 @@ import (
 	"github.com/mirhijinam/pg-project/internal/model"
 )
 
+// GetCmd handles getting of a command by id
+// @Description Getting a command by id
+// @Tags Cmd
+// @Produce application/json
+// @Param id path int true "id of the command to get"
+// @Success 200 {object} envelope "Command was gotten successfully"
+// @Failure 400 {object} envelope "Bad request if the id is incorrect"
+// @Failure 404 {object} envelope "Not found if there is no command with the given id"
+// @Failure 500 {object} envelope "Internal server error"
+// @Router /cmd_list/{id} [get]
 func (h *CommandHandler) GetCmd() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.Background()

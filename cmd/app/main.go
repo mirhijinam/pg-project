@@ -13,6 +13,12 @@ import (
 	"github.com/mirhijinam/pg-project/internal/config"
 )
 
+// @title pg-project
+// @version 1.0
+// @description API to run commands. A command is a bash script. Allow to run commands in parallel
+
+// @host localhost:7070
+// @BasePath /
 func main() {
 	ctx := context.Background()
 

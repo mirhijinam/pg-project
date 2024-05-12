@@ -1,0 +1,130 @@
+basePath: /
+definitions:
+  internal_api.createCmdRequest:
+    properties:
+      cmd_raw:
+        type: string
+      is_long_cmd:
+        type: boolean
+    type: object
+  internal_api.envelope:
+    additionalProperties: true
+    type: object
+host: localhost:7070
+info:
+  contact: {}
+  description: API to run commands. A command is a bash script. Allow to run commands
+    in parallel
+  title: pg-project
+  version: "1.0"
+paths:
+  /cmd_list:
+    get:
+      description: Getting a list of all commands.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of commands were gotten successfully
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+      tags:
+      - Cmd
+  /cmd_list/{id}:
+    get:
+      description: Getting a command by id
+      parameters:
+      - description: id of the command to get
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Command was gotten successfully
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+        "400":
+          description: Bad request if the id is incorrect
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+        "404":
+          description: Not found if there is no command with the given id
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+      tags:
+      - Cmd
+  /create_cmd:
+    post:
+      description: Create and execute a command
+      parameters:
+      - description: Request Create Command
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.createCmdRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Command created successfully
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+        "400":
+          description: Bad request if the input data is incorrect
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+        "403":
+          description: Forbidden if attempting a sudo command without admin rights
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+        "500":
+          description: Internal server error if command creation fails
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+      tags:
+      - Cmd
+  /stop_cmd/{id}:
+    post:
+      description: Stop a command by its id
+      parameters:
+      - description: id of the command to stop
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Command stopped successfully, returns the id of the stopped
+            command
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+        "400":
+          description: Bad request if the id is incorrect or conversion error
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+        "404":
+          description: Not found if there is no command with the given id
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_api.envelope'
+      summary: Stop a command
+      tags:
+      - Cmd
+swagger: "2.0"
