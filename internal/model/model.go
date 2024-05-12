@@ -1,7 +1,6 @@
 package model
 
 import (
-	"database/sql"
 	"errors"
 	"os/exec"
 	"time"
@@ -12,14 +11,14 @@ var (
 )
 
 type Command struct {
-	Id        int
-	Name      string
-	Raw       string
-	Status    sql.NullString
-	ErrorMsg  sql.NullString
-	Logs      sql.NullString
-	CreatedAt time.Time
-	UpdatedAt *time.Time
+	Id        int        `json:"id"`
+	Name      string     `json:"name"`
+	Raw       string     `json:"raw"`
+	Status    string     `json:"status,omitempty"`
+	ErrorMsg  string     `json:"error_msg,omitempty"`
+	Logs      string     `json:"logs,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
 
 type CommandExec struct {

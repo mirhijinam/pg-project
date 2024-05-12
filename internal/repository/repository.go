@@ -81,7 +81,7 @@ func (cr *CommandRepo) SetSuccess(ctx context.Context, id int) (err error) {
 
 func (cr *CommandRepo) GetList(ctx context.Context) (cmdList []model.Command, err error) {
 	stmt := `
-		SELECT c.id, c.name, c.raw, c.status, c.error_msg, cl.logs, c.created_at, c.updated_at 
+		SELECT c.id, c.name, c.raw, COALESCE(c.status, ''), COALESCE(c.error_msg, ''), COALESCE(cl.logs, ''), c.created_at, c.updated_at 
 		FROM commands c
 		LEFT JOIN command_logs cl ON c.id = cl.command_id`
 	rowList, err := cr.db.QueryContext(ctx, stmt)
@@ -113,10 +113,10 @@ func (cr *CommandRepo) GetList(ctx context.Context) (cmdList []model.Command, er
 
 func (cr *CommandRepo) GetOne(ctx context.Context, id int) (cmd model.Command, err error) {
 	stmt := `
-        SELECT c.id, c.name, c.raw, c.status, c.error_msg, cl.logs, c.created_at, c.updated_at
-        FROM commands c
-        LEFT JOIN command_logs cl ON c.id = cl.command_id
-        WHERE c.id = $1`
+	SELECT c.id, c.name, c.raw, COALESCE(c.status, ''), COALESCE(c.error_msg, ''), COALESCE(cl.logs, ''), c.created_at, c.updated_at
+	FROM commands c
+	LEFT JOIN command_logs cl ON c.id = cl.command_id
+	WHERE c.id = $1`
 
 	row := cr.db.QueryRowContext(ctx, stmt, id)
 	err = row.Scan(

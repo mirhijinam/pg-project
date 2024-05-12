@@ -28,21 +28,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	mux := api.New(ctx, dbCfg)
+	handler := api.New(ctx, dbCfg)
 
-	srvCfg := config.GetServerConfig()
+	srvCfg, err := config.GetServerConfig()
+	if err != nil {
+		slog.Error("failed to parse server config", "error", err.Error())
+		os.Exit(1)
+	}
 
-	err = run(mux, srvCfg)
+	err = run(*handler, srvCfg)
 	if err != nil {
 		slog.Error("failed to run the server", "error", err.Error())
 		os.Exit(2)
 	}
 }
 
-func run(mux *http.ServeMux, srvCfg config.ServerConfig) error {
+func run(handler http.Handler, srvCfg config.ServerConfig) error {
 	srv := http.Server{
-		Addr:    srvCfg.HTTPPort,
-		Handler: mux,
+		Handler:      handler,
+		Addr:         srvCfg.HTTPPort,
+		WriteTimeout: srvCfg.Timeout,
+		ReadTimeout:  srvCfg.Timeout,
+		IdleTimeout:  srvCfg.IdleTimeout,
 	}
 
 	serveChan := make(chan error, 1)

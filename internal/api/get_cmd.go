@@ -11,6 +11,9 @@ import (
 	"github.com/mirhijinam/pg-project/internal/model"
 )
 
+type GetCmdResponse struct {
+}
+
 // GetCmd handles getting of a command by id
 // @Description Getting a command by id
 // @Tags Cmd
@@ -26,31 +29,37 @@ func (h *CommandHandler) GetCmd() http.HandlerFunc {
 		ctx := context.Background()
 		inpIdStr, ok := strings.CutPrefix(r.URL.Path, getListUrlPrefix)
 		if !ok {
-			h.serverErrorResponse(w, r, model.ErrRecordNotFound)
+			err := errors.New("id retrieval from the url")
+			slog.Error("failed to parse url", "error", err.Error())
+			h.badRequestResponse(w, r, err)
+			return
 		}
 
 		inpId, err := strconv.Atoi(inpIdStr)
 		if err != nil {
+			slog.Error("failed to define an id from the url", "error", err.Error())
 			h.serverErrorResponse(w, r, err)
-			slog.Error("occasionally caught atoi's error. probability = 0.00001%")
 			return
 		}
-		slog.Info("GetCmd:", slog.Int("id", inpId))
 
 		cmd, err := h.CommandService.GetCommand(ctx, inpId)
 		if err != nil {
 			switch {
 			case errors.Is(err, model.ErrRecordNotFound):
+				slog.Error("failed to found a command with such id", "error", err.Error())
 				h.notFoundResponse(w, r)
 			default:
+				slog.Error("failed to get a command by such id", "error", err.Error())
 				h.serverErrorResponse(w, r, err)
 			}
 			return
 		}
 
-		err = writeJSON(w, http.StatusOK, envelope{"cmd": cmd}, nil)
+		err = writeJSON(w, http.StatusOK, envelope{"requested command": cmd}, nil)
 		if err != nil {
+			slog.Error("failed to write json response", "error", err.Error())
 			h.serverErrorResponse(w, r, err)
+			return
 		}
 	}
 }

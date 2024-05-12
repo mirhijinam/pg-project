@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -31,12 +32,15 @@ func (h *CommandHandler) CreateCmd() http.HandlerFunc {
 
 		err := readJSONBody(w, r, &inp)
 		if err != nil {
+			slog.Error("failed to read json request", "error", err.Error())
 			h.badRequestResponse(w, r, err)
 			return
 		}
 
 		if len(inp.CmdRaw) == 0 {
-			h.badRequestResponse(w, r, errors.New("empty command text"))
+			err := errors.New("empty command text")
+			slog.Error("failed to create the provided command", "error", err.Error())
+			h.badRequestResponse(w, r, err)
 			return
 		}
 
@@ -49,11 +53,13 @@ func (h *CommandHandler) CreateCmd() http.HandlerFunc {
 		}
 
 		if isSudo && !admin {
+
 			h.forbiddenAccessResponse(w, r)
 			return
 		} else {
 			err = h.CommandService.CreateCommand(&cmd, inp.IsLongCmd)
 			if err != nil {
+				slog.Error("failed to create the provided command", "error", err.Error())
 				h.serverErrorResponse(w, r, err)
 				return
 			}
@@ -61,8 +67,9 @@ func (h *CommandHandler) CreateCmd() http.HandlerFunc {
 			headers := make(http.Header)
 			headers.Set("Location", fmt.Sprintf("/cmd_list/%d", cmd.Id))
 
-			err = writeJSON(w, http.StatusCreated, envelope{"cmd": cmd}, headers)
+			err = writeJSON(w, http.StatusCreated, envelope{"created command": cmd}, headers)
 			if err != nil {
+				slog.Error("failed to write json response", "error", err.Error())
 				h.serverErrorResponse(w, r, err)
 				return
 			}

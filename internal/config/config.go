@@ -4,15 +4,13 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
-const defaultCount = 1
-
 type LoggerConfig struct {
-	LogFile  string
-	MaxCount int
+	Enviroment string
 }
 
 type DBConfig struct {
@@ -27,23 +25,13 @@ type DBConfig struct {
 type ServerConfig struct {
 	HTTPPort       string
 	ServerEndpoint string
+	Timeout        time.Duration
+	IdleTimeout    time.Duration
 }
 
 func init() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("No .env file found")
-	}
-}
-
-func GetLoggerConfig() LoggerConfig {
-	maxCount, err := strconv.Atoi(os.Getenv("MAXCOUNT"))
-	if err != nil {
-		// log: Failed to interpritate number from .env so use 1
-		maxCount = defaultCount
-	}
-	return LoggerConfig{
-		LogFile:  os.Getenv("LOGFILE"),
-		MaxCount: maxCount,
 	}
 }
 
@@ -63,9 +51,21 @@ func GetDBConfig() (DBConfig, error) {
 	}, nil
 }
 
-func GetServerConfig() ServerConfig {
+func GetServerConfig() (ServerConfig, error) {
+	timeout, err := time.ParseDuration(os.Getenv("TIMEOUT"))
+	if err != nil {
+		return ServerConfig{}, err
+	}
+
+	idletimeout, err := time.ParseDuration(os.Getenv("TIMEOUT"))
+	if err != nil {
+		return ServerConfig{}, err
+	}
+
 	return ServerConfig{
 		HTTPPort:       ":" + os.Getenv("HTTP_PORT"),
 		ServerEndpoint: os.Getenv("SERVER_ENDPOINT"),
-	}
+		Timeout:        timeout,
+		IdleTimeout:    idletimeout,
+	}, nil
 }

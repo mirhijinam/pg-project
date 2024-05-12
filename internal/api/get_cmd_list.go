@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 )
 
@@ -18,13 +19,16 @@ func (h *CommandHandler) GetCmdList() http.HandlerFunc {
 
 		cmdList, err := h.CommandService.GetCommandList(ctx)
 		if err != nil {
+			slog.Error("failed to get a command list", "error", err.Error())
 			h.serverErrorResponse(w, r, err)
 			return
 		}
 
-		err = writeJSON(w, http.StatusOK, envelope{"cmdList": cmdList}, nil)
+		err = writeJSON(w, http.StatusOK, envelope{"list of executed commands": cmdList}, nil)
 		if err != nil {
+			slog.Error("failed to write json response", "error", err.Error())
 			h.serverErrorResponse(w, r, err)
+			return
 		}
 	}
 }

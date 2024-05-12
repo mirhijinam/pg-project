@@ -1,13 +1,15 @@
 package api
 
 import (
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/mirhijinam/pg-project/internal/model"
 )
+
+type StopCmdResponse struct {
+}
 
 // StopCmd handles stopping a command by its id
 // @Summary Stop a command
@@ -24,27 +26,32 @@ func (h *CommandHandler) StopCmd() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		inpIdStr, ok := strings.CutPrefix(r.URL.Path, stopUrlPrefix)
 		if !ok {
-			h.serverErrorResponse(w, r, model.ErrRecordNotFound)
+			err := errors.New("id retrieval from the url")
+			slog.Error("failed to parse url", "error", err.Error())
+			h.badRequestResponse(w, r, err)
+			return
 		}
 
 		inpId, err := strconv.Atoi(inpIdStr)
 		if err != nil {
+			slog.Error("failed to define an id from the url", "error", err.Error())
 			h.serverErrorResponse(w, r, err)
-			slog.Error("occasionally caught atoi's error. probability = 0.00001%")
 			return
 		}
 		slog.Info("StopCmd:", slog.Int("id", inpId))
 
 		err = h.CommandService.DeleteCommand(inpId)
 		if err != nil {
+			slog.Error("failed to stop a command by such id", "error", err.Error())
 			h.serverErrorResponse(w, r, err)
 			return
 		}
 
 		headers := make(http.Header)
 
-		err = writeJSON(w, http.StatusOK, envelope{"CmdId": inpId}, headers)
+		err = writeJSON(w, http.StatusOK, envelope{"id of stopped command": inpId}, headers)
 		if err != nil {
+			slog.Error("failed to write json response", "error", err.Error())
 			h.serverErrorResponse(w, r, err)
 			return
 		}

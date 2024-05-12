@@ -43,8 +43,7 @@ func (cs *CommandService) DeleteCommand(id int) error {
 
 	loadedExecCmd, ok := cs.Workers.Load(id)
 	if !ok {
-		slog.Error("failed to find cmd with such id")
-		return errors.New("failed to find cmd with such id")
+		return errors.New("no worker with such id")
 	}
 
 	err := loadedExecCmd.(*model.CommandExec).Exec.Process.Kill()
@@ -54,7 +53,6 @@ func (cs *CommandService) DeleteCommand(id int) error {
 }
 
 func (cs *CommandService) CreateCommand(cmd *model.Command, isLong bool) error {
-	slog.Info("in the service.CreateCommand")
 	ctx := context.Background()
 
 	err := cs.repo.Create(ctx, cmd)
@@ -63,10 +61,9 @@ func (cs *CommandService) CreateCommand(cmd *model.Command, isLong bool) error {
 	}
 
 	cs.Pool.Go(func() {
-		slog.Info("in the func of the Pool.Go")
 		err := cs.execCommand(ctx, *cmd, isLong)
 		if err != nil {
-			slog.ErrorContext(ctx, "failed to exec the command", err)
+			slog.Error("failed to exec the command", "error", err.Error())
 		}
 	})
 
@@ -83,26 +80,20 @@ func (cs *CommandService) execCommand(ctx context.Context, cmd model.Command, is
 		receivedErr := <-errch
 		if receivedErr != nil {
 			err = errors.Join(err, cs.repo.SetError(ctx, cmd.Id, receivedErr.Error()))
-			slog.Error("failed to execute command", "error", receivedErr.Error())
 		} else {
-			if err = cs.repo.SetSuccess(ctx, cmd.Id); err != nil {
-				slog.Error("failed to set command success in db", "error", err.Error())
-			}
+			err = cs.repo.SetSuccess(ctx, cmd.Id)
 		}
 	}()
 
-	slog.Info("in the func execCommand")
 	execCmd := exec.Command("/bin/sh", "-c", cmd.Raw)
 
 	stdout, err := execCmd.StdoutPipe()
 	if err != nil {
-		slog.Error("failed to create stdout pipe", "error", err.Error())
 		return err
 	}
 
 	err = execCmd.Start()
 	if err != nil {
-		slog.Error("failed to start command", "error", err.Error())
 		return err
 	}
 
@@ -124,6 +115,7 @@ func (cs *CommandService) execCommand(ctx context.Context, cmd model.Command, is
 
 func (cs *CommandService) short(ctx context.Context, stdout io.ReadCloser, scanner *bufio.Scanner, execCmd *exec.Cmd, errch chan error, wg *sync.WaitGroup, cmd *model.Command) {
 	slog.Info("in the func short")
+
 	defer stdout.Close()
 	defer wg.Done()
 
@@ -139,22 +131,22 @@ func (cs *CommandService) short(ctx context.Context, stdout io.ReadCloser, scann
 	}
 
 	err = execCmd.Wait()
-	if err == nil {
-		slog.Info("successfully executed and wrote into db", slog.String("short cmd", cmd.Raw))
-	} else {
-		slog.Error("command completed with error", "error", err.Error())
+	if err != nil {
+		slog.Error("failed to exec", "error", err.Error())
 		return
 	}
+	slog.Info("successful exec:", slog.String("short_cmd", cmd.Raw))
 
 	_, err = cs.repo.Writer(ctx, cmd.Id)([]byte(accumulate))
 	if err != nil {
-		slog.Error("failed to write cmd result into db", "error", err.Error())
+		slog.Error("failed to write command output", "error", err.Error())
 		return
 	}
 }
 
 func (cs *CommandService) long(ctx context.Context, stdout io.ReadCloser, scanner *bufio.Scanner, execCmd *exec.Cmd, errch chan error, wg *sync.WaitGroup, cmd *model.Command) {
 	slog.Info("in the func long")
+
 	defer stdout.Close()
 	defer wg.Done()
 
@@ -167,18 +159,17 @@ func (cs *CommandService) long(ctx context.Context, stdout io.ReadCloser, scanne
 		line := scanner.Text()
 		_, err := cs.repo.Writer(ctx, cmd.Id)([]byte(line + "\n"))
 		if err != nil {
-			slog.Error("failed to write cmd result into db", "error", err.Error())
+			slog.Error("failed to write command output", "error", err.Error())
 			return
 		}
 	}
 
 	err = execCmd.Wait()
-	if err == nil {
-		slog.Info("successfully executed and wrote into db", slog.String("long cmd", cmd.Raw))
-	} else {
-		slog.Error("failed to set command success in db", "error", err.Error())
+	if err != nil {
+		slog.Error("failed to exec", "error", err.Error())
 		return
 	}
+	slog.Info("successful exec:", slog.String("long_cmd", cmd.Raw))
 }
 
 func (cs *CommandService) GetCommand(ctx context.Context, id int) (model.Command, error) {
