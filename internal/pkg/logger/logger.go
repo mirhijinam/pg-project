@@ -33,7 +33,12 @@ func (lw *loggingResponseWriter) Write(p []byte) (int, error) {
 func New(log *slog.Logger) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			log := log.With(
+				slog.String("component", "middleware/logger"),
+			)
+
 			lw := &loggingResponseWriter{ResponseWriter: w}
+
 			t1 := time.Now()
 
 			defer func() {

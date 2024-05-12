@@ -31,6 +31,5 @@ func MustOpenDB(ctx context.Context, cfg config.DBConfig) *sql.DB {
 		os.Exit(1)
 	}
 
-	fmt.Println("success")
 	return db
 }

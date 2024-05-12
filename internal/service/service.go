@@ -61,10 +61,7 @@ func (cs *CommandService) CreateCommand(cmd *model.Command, isLong bool) error {
 	}
 
 	cs.Pool.Go(func() {
-		err := cs.execCommand(ctx, *cmd, isLong)
-		if err != nil {
-			slog.Error("failed to exec the command", "error", err.Error())
-		}
+		cs.execCommand(ctx, *cmd, isLong)
 	})
 
 	return nil
@@ -132,7 +129,12 @@ func (cs *CommandService) short(ctx context.Context, stdout io.ReadCloser, scann
 
 	err = execCmd.Wait()
 	if err != nil {
-		slog.Error("failed to exec", "error", err.Error())
+		switch err.Error() {
+		case "signal: killed":
+			slog.Info("execution was stopped", slog.String("short_cmd", cmd.Raw))
+		default:
+			slog.Error("failed to exec", "error", err.Error())
+		}
 		return
 	}
 	slog.Info("successful exec:", slog.String("short_cmd", cmd.Raw))
@@ -166,7 +168,12 @@ func (cs *CommandService) long(ctx context.Context, stdout io.ReadCloser, scanne
 
 	err = execCmd.Wait()
 	if err != nil {
-		slog.Error("failed to exec", "error", err.Error())
+		switch err.Error() {
+		case "signal: killed":
+			slog.Info("execution was stopped", slog.String("long_cmd", cmd.Raw))
+		default:
+			slog.Error("failed to exec", "error", err.Error())
+		}
 		return
 	}
 	slog.Info("successful exec:", slog.String("long_cmd", cmd.Raw))

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"log/slog"
 	"sync"
 )
 
@@ -33,7 +32,5 @@ func (p *Pool) activate() {
 }
 
 func (p *Pool) Go(fn func()) {
-	slog.Info("in the Pool.Go")
 	p.ch <- fn
-	slog.Info("fn added to the p.ch")
 }

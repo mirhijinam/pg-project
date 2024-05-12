@@ -38,7 +38,6 @@ func (h *CommandHandler) StopCmd() http.HandlerFunc {
 			h.serverErrorResponse(w, r, err)
 			return
 		}
-		slog.Info("StopCmd:", slog.Int("id", inpId))
 
 		err = h.CommandService.DeleteCommand(inpId)
 		if err != nil {
