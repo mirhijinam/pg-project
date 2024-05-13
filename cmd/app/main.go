@@ -62,7 +62,7 @@ func run(handler http.Handler, srvCfg config.ServerConfig) error {
 
 	select {
 	case <-stop:
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 		defer cancel()
 		return srv.Shutdown(ctx)
 	case err := <-serveChan:

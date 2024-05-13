@@ -1,11 +1,13 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type StopCmdResponse struct {
@@ -24,7 +26,7 @@ type StopCmdResponse struct {
 // @Router /stop_cmd/{id} [post]
 func (h *CommandHandler) StopCmd() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		inpIdStr, ok := strings.CutPrefix(r.URL.Path, stopUrlPrefix)
+		inpIdStr, ok := strings.CutPrefix(r.URL.Path, prefixStopUrl)
 		if !ok {
 			err := errors.New("id retrieval from the url")
 			slog.Error("failed to parse url", "error", err.Error())
@@ -38,8 +40,10 @@ func (h *CommandHandler) StopCmd() http.HandlerFunc {
 			h.serverErrorResponse(w, r, err)
 			return
 		}
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(contextTimeoutSec)*time.Second)
+		defer cancel()
 
-		err = h.CommandService.DeleteCommand(inpId)
+		err = h.CommandService.StopCommand(ctx, inpId)
 		if err != nil {
 			slog.Error("failed to stop a command by such id", "error", err.Error())
 			h.serverErrorResponse(w, r, err)

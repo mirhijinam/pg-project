@@ -15,9 +15,10 @@ import (
 )
 
 var (
-	defaultCountWorkers = 1
-	stopUrlPrefix       = "/stop_cmd/"
-	getListUrlPrefix    = "/cmd_list/"
+	contextTimeoutSec   = 600
+	countWorkersDefault = 1
+	prefixStopUrl       = "/stop_cmd/"
+	prefixGetListUrl    = "/cmd_list/"
 )
 
 type Handler interface {
@@ -28,8 +29,8 @@ type Handler interface {
 }
 
 type Service interface {
-	CreateCommand(*model.Command, bool) error
-	DeleteCommand(int) error
+	CreateCommand(context.Context, *model.Command, bool) error
+	StopCommand(context.Context, int) error
 	GetCommand(context.Context, int) (model.Command, error)
 	GetCommandList(context.Context) ([]model.Command, error)
 }
@@ -39,9 +40,9 @@ type CommandHandler struct {
 }
 
 func New(ctx context.Context, dbCfg config.DBConfig) *http.Handler {
-	maxCountWorkers, err := strconv.Atoi(os.Getenv("MAXCOUNT"))
+	countWorkersMax, err := strconv.Atoi(os.Getenv("MAXCOUNT"))
 	if err != nil {
-		maxCountWorkers = defaultCountWorkers
+		countWorkersMax = countWorkersDefault
 	}
 
 	dbConn := db.MustOpenDB(ctx, dbCfg)
@@ -49,7 +50,7 @@ func New(ctx context.Context, dbCfg config.DBConfig) *http.Handler {
 	ch := &CommandHandler{
 		CommandService: service.New(
 			repository.New(dbConn),
-			service.NewPool(maxCountWorkers),
+			service.NewPool(countWorkersMax),
 		),
 	}
 

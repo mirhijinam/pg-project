@@ -4,12 +4,12 @@ import (
 	"sync"
 )
 
-type Pool struct {
+type CommandPool struct {
 	ch chan func()
 }
 
-func NewPool(maxCnt int) *Pool {
-	pool := &Pool{
+func NewPool(maxCnt int) *CommandPool {
+	pool := &CommandPool{
 		ch: make(chan func(), maxCnt),
 	}
 
@@ -17,7 +17,7 @@ func NewPool(maxCnt int) *Pool {
 	return pool
 }
 
-func (p *Pool) activate() {
+func (p *CommandPool) activate() {
 	var wg sync.WaitGroup
 
 	for cmd := range p.ch {
@@ -31,6 +31,6 @@ func (p *Pool) activate() {
 	wg.Wait()
 }
 
-func (p *Pool) Go(fn func()) {
+func (p *CommandPool) Go(fn func()) {
 	p.ch <- fn
 }

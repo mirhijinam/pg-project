@@ -10,33 +10,23 @@ import (
 	"sync"
 
 	"github.com/mirhijinam/pg-project/internal/model"
-	"github.com/mirhijinam/pg-project/internal/repository"
 )
 
 type CommandService struct {
 	repo    Repo
-	Workers sync.Map
-	Pool    *Pool
+	Workers *sync.Map
+	Pool    Pool
 }
 
-type Repo interface {
-	Create(context.Context, *model.Command) error
-	SetError(context.Context, int, string) error
-	SetSuccess(context.Context, int) error
-	GetList(context.Context) ([]model.Command, error)
-	GetOne(context.Context, int) (model.Command, error)
-	Writer(context.Context, int) repository.WriterFunc
-}
-
-func New(repo Repo, pool *Pool) *CommandService {
+func New(repo Repo, pool Pool) *CommandService {
 	return &CommandService{
 		repo:    repo,
 		Pool:    pool,
-		Workers: sync.Map{},
+		Workers: &sync.Map{},
 	}
 }
 
-func (cs *CommandService) DeleteCommand(id int) error {
+func (cs *CommandService) StopCommand(ctx context.Context, id int) error {
 	defer func() {
 		cs.Workers.Delete(id)
 	}()
@@ -52,9 +42,7 @@ func (cs *CommandService) DeleteCommand(id int) error {
 
 }
 
-func (cs *CommandService) CreateCommand(cmd *model.Command, isLong bool) error {
-	ctx := context.Background()
-
+func (cs *CommandService) CreateCommand(ctx context.Context, cmd *model.Command, isLong bool) error {
 	err := cs.repo.Create(ctx, cmd)
 	if err != nil {
 		return err
@@ -76,13 +64,15 @@ func (cs *CommandService) execCommand(ctx context.Context, cmd model.Command, is
 		close(errch)
 		receivedErr := <-errch
 		if receivedErr != nil {
+			slog.Error("failed to exec command", "error", receivedErr.Error())
 			err = errors.Join(err, cs.repo.SetError(ctx, cmd.Id, receivedErr.Error()))
 		} else {
+			slog.Info("successfully exec command")
 			err = cs.repo.SetSuccess(ctx, cmd.Id)
 		}
 	}()
 
-	execCmd := exec.Command("/bin/sh", "-c", cmd.Raw)
+	execCmd := exec.CommandContext(ctx, "/bin/sh", "-c", cmd.Raw)
 
 	stdout, err := execCmd.StdoutPipe()
 	if err != nil {
@@ -123,6 +113,11 @@ func (cs *CommandService) short(ctx context.Context, stdout io.ReadCloser, scann
 
 	var accumulate string
 	for scanner.Scan() {
+		if ctx.Err() != nil {
+			err = ctx.Err()
+			slog.Error("context canceled", "error", err.Error())
+			return
+		}
 		line := scanner.Text()
 		accumulate += line + "\n"
 	}
@@ -158,6 +153,11 @@ func (cs *CommandService) long(ctx context.Context, stdout io.ReadCloser, scanne
 	}()
 
 	for scanner.Scan() {
+		if ctx.Err() != nil {
+			err = ctx.Err()
+			slog.Error("context canceled", "error", err.Error())
+			return
+		}
 		line := scanner.Text()
 		_, err := cs.repo.Writer(ctx, cmd.Id)([]byte(line + "\n"))
 		if err != nil {

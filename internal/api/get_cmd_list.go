@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 )
 
 // GetCmdList handles getting of all commands.
@@ -15,7 +16,8 @@ import (
 // @Router /cmd_list [get]
 func (h *CommandHandler) GetCmdList() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(contextTimeoutSec)*time.Second)
+		defer cancel()
 
 		cmdList, err := h.CommandService.GetCommandList(ctx)
 		if err != nil {

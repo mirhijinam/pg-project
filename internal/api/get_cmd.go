@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mirhijinam/pg-project/internal/model"
 )
@@ -26,8 +27,10 @@ type GetCmdResponse struct {
 // @Router /cmd_list/{id} [get]
 func (h *CommandHandler) GetCmd() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.Background()
-		inpIdStr, ok := strings.CutPrefix(r.URL.Path, getListUrlPrefix)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(contextTimeoutSec)*time.Second)
+		defer cancel()
+
+		inpIdStr, ok := strings.CutPrefix(r.URL.Path, prefixGetListUrl)
 		if !ok {
 			err := errors.New("id retrieval from the url")
 			slog.Error("failed to parse url", "error", err.Error())

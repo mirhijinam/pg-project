@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -58,7 +59,9 @@ func (h *CommandHandler) CreateCmd() http.HandlerFunc {
 				CreatedAt: time.Now(),
 			}
 
-			err = h.CommandService.CreateCommand(&cmd, inp.IsLongCmd)
+			ctx := context.Background()
+
+			err = h.CommandService.CreateCommand(ctx, &cmd, inp.IsLongCmd)
 			if err != nil {
 				slog.Error("failed to create the provided command", "error", err.Error())
 				h.serverErrorResponse(w, r, err)

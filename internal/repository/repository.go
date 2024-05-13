@@ -32,7 +32,7 @@ func (cr *CommandRepo) Create(ctx context.Context, cmd *model.Command) (err erro
 		RETURNING id, created_at`
 	args := []interface{}{cmd.Name, cmd.Raw}
 
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	return cr.db.QueryRowContext(ctx, stmt, args...).Scan(&cmd.Id, &cmd.CreatedAt)
@@ -59,7 +59,7 @@ func (cr *CommandRepo) SetSuccess(ctx context.Context, id int) (err error) {
 		SET status = $1, updated_at = now() 
 		WHERE id = $2`
 
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
 	defer cancel()
 
 	result, err := cr.db.ExecContext(ctx, stmt, cmdStatusSuccess, id)
